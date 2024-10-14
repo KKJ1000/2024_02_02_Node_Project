@@ -1,16 +1,12 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using System;
 using System.Text;
 using UnityEngine.Networking;
-using Newtonsoft;
 using Newtonsoft.Json;
-using Unity.VisualScripting;
 
 public class AuthManager : MonoBehaviour
 {
-
     //서버 URL 및 PlayerPrefs 키 상수 정의
     private const string SERVER_URL = "http://localhost:4000";
     private const string ACCESS_TOKEN_PREFS_KEY = "AccessToken";
@@ -25,7 +21,7 @@ public class AuthManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        LoadTokenFromPrefs();        
+        LoadTokenFromPrefs();
     }
 
     //PlayerPrefs에서 토큰 정보 로드
@@ -67,13 +63,14 @@ public class AuthManager : MonoBehaviour
 
             if (www.result != UnityWebRequest.Result.Success)
             {
-                Debug.LogError($"Registration Error:{www.error}");
+                Debug.LogError($"Registration Error: {www.error}");
             }
             else
             {
                 Debug.Log("Registration successful");
             }
         }
+
     }
 
     //로그인 코루틴
@@ -93,7 +90,7 @@ public class AuthManager : MonoBehaviour
 
             if (www.result != UnityWebRequest.Result.Success)
             {
-                Debug.LogError($"Registration Error:{www.error}");
+                Debug.LogError($"Registration Error: {www.error}");
             }
             else
             {
@@ -103,6 +100,7 @@ public class AuthManager : MonoBehaviour
                 Debug.Log("Login successful");
             }
         }
+
     }
 
     //로그아웃 코루틴
@@ -122,14 +120,14 @@ public class AuthManager : MonoBehaviour
 
             if (www.result != UnityWebRequest.Result.Success)
             {
-                Debug.LogError($"Registration Error:{www.error}");
+                Debug.LogError($"Registration Error: {www.error}");
             }
             else
             {
                 //로컬 토큰 정보 초기화
                 accessToken = "";
                 refreshToken = "";
-                tokenExpiryTime = DateTime.MinValue; 
+                tokenExpiryTime = DateTime.MinValue;
                 PlayerPrefs.DeleteKey(ACCESS_TOKEN_PREFS_KEY);
                 PlayerPrefs.DeleteKey(REFRESH_TOKEN_PREFS_KEY);
                 PlayerPrefs.DeleteKey(TOKEN_EXPIRY_PREFS_KEY);
@@ -139,15 +137,14 @@ public class AuthManager : MonoBehaviour
         }
     }
 
-    // 토큰 갱신 코루틴
+    //토큰 갱신 코루틴
     public IEnumerator RefreshToken()
     {
-        if(string.IsNullOrEmpty(refreshToken))
+        if (string.IsNullOrEmpty(refreshToken))
         {
-            Debug.LogError("리프레시 토큰이 없으므로 다시 로그인 한다");
+            Debug.LogError("리프레시 토큰이 없으므로 다시 로그인한다.");
             yield break;
         }
-
 
         var refreshData = new { refreshToken };
         var jsonData = JsonConvert.SerializeObject(refreshData);
@@ -163,26 +160,25 @@ public class AuthManager : MonoBehaviour
 
             if (www.result != UnityWebRequest.Result.Success)
             {
-                Debug.LogError($"Registration Error:{www.error}");
+                Debug.LogError($"Registration Error: {www.error}");
                 yield return Login("username", "password"); //실구현에서는 저장된 사용자 정보를 사용
             }
             else
             {
                 var response = JsonConvert.DeserializeObject<RefreshTokenResponse>(www.downloadHandler.text);
                 SaveTokenToPrefs(response.accessToken, refreshToken, DateTime.UtcNow.AddMinutes(15));
-                Debug.Log("Token refreshed successfully");
+                Debug.Log("Token refreshded successfully");
             }
         }
     }
 
     //보호된 데이터 가져오기 코루틴
-
     public IEnumerator GetProtectedData()
     {
         //토큰이 없거나 만료되었는지 확인
         if (string.IsNullOrEmpty(accessToken) || DateTime.UtcNow >= tokenExpiryTime)
         {
-            Debug.LogError("Access token is empty or expired Refreshing");
+            Debug.Log("Access token is empty or expired Refreshing...");
         }
 
         using (UnityWebRequest www = UnityWebRequest.Get($"{SERVER_URL}/protected"))
@@ -191,9 +187,11 @@ public class AuthManager : MonoBehaviour
 
             yield return www.SendWebRequest();
 
+
             if (www.result != UnityWebRequest.Result.Success)
             {
-                Debug.LogError($"Registration Error:{www.error}");
+                Debug.LogError($"Registration Error: {www.error}");
+
             }
             else
             {

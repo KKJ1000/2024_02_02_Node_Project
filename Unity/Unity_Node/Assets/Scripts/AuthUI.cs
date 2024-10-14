@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -13,23 +12,18 @@ public class AuthUI : MonoBehaviour
     public Button logoutButton;
     public Button getDataButton;
 
-
     public Text statusText;
 
     private AuthManager authManager;
 
+    // Start is called before the first frame update
     void Start()
     {
         authManager = GetComponent<AuthManager>();
         registerButton.onClick.AddListener(OnRegisterClick);
         loginButton.onClick.AddListener(OnLoginClick);
         logoutButton.onClick.AddListener(OnLogoutClick);
-        getDataButton.onClick.AddListener(OnGetDatalick);
-    }
-
-    private void OnRegisterClick()
-    {
-        StartCoroutine(RegisterCoroutine());
+        getDataButton.onClick.AddListener(OnGetDataClick);
     }
 
     private void OnLoginClick()
@@ -37,18 +31,22 @@ public class AuthUI : MonoBehaviour
         StartCoroutine(LoginCoroutine());
     }
 
-    private IEnumerator RegisterCoroutine()
-    {
-        statusText.text = "회원가입 중...";
-        yield return StartCoroutine(authManager.Register(usernameInput.text, passwordInput.text));
-        statusText.text = "회원가입 성공. 로그인 해주세요";
-    }
-
     private IEnumerator LoginCoroutine()
     {
         statusText.text = "로그인 중...";
         yield return StartCoroutine(authManager.Login(usernameInput.text, passwordInput.text));
         statusText.text = "로그인 성공";
+    }
+    private void OnRegisterClick()
+    {
+        StartCoroutine(RegisterCoroutine());
+    }
+
+    private IEnumerator RegisterCoroutine()
+    {
+        statusText.text = "회원가입 중...";
+        yield return StartCoroutine(authManager.Register(usernameInput.text, passwordInput.text));
+        statusText.text = "회원가입 성공. 로그인 해주세요";
     }
 
     private void OnLogoutClick()
@@ -62,8 +60,7 @@ public class AuthUI : MonoBehaviour
         yield return StartCoroutine(authManager.Logout());
         statusText.text = "로그아웃 성공";
     }
-
-    private void OnGetDatalick()
+    private void OnGetDataClick()
     {
         StartCoroutine(GetDataCoroutine());
     }
@@ -72,6 +69,6 @@ public class AuthUI : MonoBehaviour
     {
         statusText.text = "데이터 요청 중...";
         yield return StartCoroutine(authManager.GetProtectedData());
-        statusText.text = "데이터 요청 완료";
+        statusText.text = "데이터 요청 성공";
     }
 }
