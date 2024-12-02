@@ -18,6 +18,7 @@ class GameServer {
 
             //2차 플레이어 ID 생성 및 관리
             const playerId = this.generatePlayerId(); 
+
             this.players.set(playerId, 
                 {
                     socket: socket,
@@ -36,25 +37,65 @@ class GameServer {
 
             socket.send(JSON.stringify(welcomeData));
 
+            //새로 추가 : 현재 접속해 있는 다른 플레이어들의 위치 정보 전송
+            this.players.forEach((playerInfo, id) => {
+                if(id !== playerId)
+                {
+                    socket.send(JSON.stringify({
+                        type: 'playerPosition',
+                        playerId: id,
+                        position: playerInfo.position
+                    }));
+                }
+            });
+
             socket.on('message', (message) => {
-                try{
+                try
+                {
                     const data = JSON.parse(message);
-                    
-                    const messageString = iconv.decode(Buffer.from(data.message), 'euc-kr');
-                    console.log(`수신된 메세지 : `, messageString);
-                    this.broadcast({
-                        type: `chat`,
-                        message: messageString
-                    });
+
+                    //switch문으로 메세지 타입 추가
+                    switch(data.type)
+                    {
+                        case 'chat' :
+                        try
+                        {
+                            const messageString = iconv.decode(Buffer.from(data.message), 'euc-kr');
+                            console.log(`수신된 메세지 : `, messageString);
+                            this.broadcast({
+                                type: `chat`,
+                                message: messageString
+                            });
+                        }
+                        
+                        catch (error)
+                        {
+                            const messageString = iconv.decode(message, 'euc-kr');
+                            console.log(`수신된 메세지 :`, messageString);
+                            this.broadcast({
+                                type: `chat`,
+                                message: messageString
+                            });
+                        }
+                        break;
+
+                        case 'playerPosition' :
+                            if(this.players.has(playerId))
+                            {
+                                this.players.get(playerId).position = data.position; //플레이어 위치 업데이트
+                                //다른 모든 클라이언트들에게 위치 정보 전송
+                                this.broadcast({
+                                    type: 'playerPosition',
+                                    playerId: playerId,
+                                    position: data.position
+                                });
+                            }
+                            break;
+                    }
                 }
                 catch (error)
                 {
-                    const messageString = iconv.decode(message, 'euc-kr');
-                    console.log(`수신된 메세지 :`, messageString);
-                    this.broadcast({
-                        type: `chat`,
-                        message: messageString
-                    });
+                    console.log('메세지 처리 중 오류');
                 }
             });
 
@@ -67,24 +108,26 @@ class GameServer {
                     playerId: playerId
                 });
                 console.log(`클라이언트 퇴장 ID : ${playerId}, 현재 접속자 : ${this.clients.size}`);
-            })
+            });
         })
     }
+    
+    
 
     broadcast(data)                              //브로드 캐스트 함수 설정
     {
         const message = JSON.stringify(data);
-        clients.forEach(clients => {
+        this.clients.forEach(clients => {
             if(clients.readyState === WebSocket.OPEN)
             {
-                clients.sned(message);
+                clients.send(message);
             }
         });
     }
 
     generatePlayerId()
     {
-        return `player_` + Math.random().toString(36),substr(2,9);
+        return `player_` + Math.random().toString(36).substr(2,9);
     }
 }
 
